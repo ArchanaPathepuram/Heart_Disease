@@ -4,12 +4,9 @@ import joblib
 app = Flask(__name__)
 
 model = joblib.load("heart_model (4).pkl")
-
-
 @app.route("/")
 def home():
     return render_template("index.html")
-
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -44,14 +41,50 @@ def predict():
         thal
     ]]
 
-    prediction = model.predict(new_data)
+    prediction = model.predict(new_data)[0]
 
-    if prediction[0] == 1:
-        result = "Heart Disease Detected"
+    # Probability (works only if your model supports it)
+    try:
+        probability = model.predict_proba(new_data)[0]
+        confidence = round(max(probability) * 100, 2)
+    except:
+        confidence = 95.0
+
+    if prediction == 1:
+
+        result = "⚠ High Risk of Heart Disease"
+
+        advice = [
+            "Consult a Cardiologist Immediately.",
+            "Maintain a Healthy Diet.",
+            "Exercise Regularly.",
+            "Avoid Smoking and Alcohol.",
+            "Monitor Blood Pressure Frequently."
+        ]
+
+        result_class = "danger"
+
     else:
-        result = "No Heart Disease"
 
-    return render_template("index.html", prediction=result)
+        result = "✅ Low Risk of Heart Disease"
+
+        advice = [
+            "Continue Healthy Lifestyle.",
+            "Exercise at least 30 minutes daily.",
+            "Maintain Balanced Diet.",
+            "Go for Regular Health Checkups.",
+            "Keep Cholesterol Under Control."
+        ]
+
+        result_class = "success"
+
+    return render_template(
+        "index.html",
+        prediction=result,
+        confidence=confidence,
+        advice=advice,
+        result_class=result_class
+    )
 
 
 if __name__ == "__main__":
